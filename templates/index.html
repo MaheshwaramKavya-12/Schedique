@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SchediQ — Institute Timetable Management</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<nav class="navbar">
+  <div class="nav-brand" onclick="goHome()"><div class="nav-logo">S</div><span class="nav-title">Schedi<span>Q</span></span></div>
+  <div class="nav-sep" id="nav-sep"></div>
+  <div class="nav-links" id="app-nav-links" style="display:none">
+    <button class="nav-link active" id="nl-dashboard" onclick="showAppSection('dashboard')">Dashboard</button>
+    <button class="nav-link" id="nl-timetable" onclick="showAppSection('timetable')">Timetable</button>
+  </div>
+  <div class="nav-right">
+    <span class="nav-role-badge" id="nav-role" style="display:none"></span>
+    <span class="nav-user" id="nav-username" style="display:none"></span>
+    <span id="notif-nav-badge" style="display:none;background:var(--red);color:#fff;border-radius:99px;padding:2px 7px;font-size:10px;font-weight:700;cursor:pointer" onclick="openPanel('panel-notif')">0</span>
+    <button class="btn-action outline" id="btn-ai-chat" style="display:none;font-size:11px;padding:5px 10px" onclick="openPanel('panel-ai-chat')">AI Chat</button>
+    <button class="theme-btn" onclick="toggleTheme()" id="theme-btn">🌙</button>
+    <button class="btn-action outline" id="btn-profile" style="display:none;font-size:11px;padding:5px 10px" onclick="openPanel('panel-profile')">👤 Profile</button>
+    <button class="btn-logout" id="btn-logout" style="display:none" onclick="logout()">Sign out</button>
+  </div>
+</nav>
+
+<div class="page active" id="page-auth">
+  <div class="auth-page">
+    <div class="auth-wrap">
+      <div class="auth-hero">
+        <h1>Smarter<br>Institute<br><em>Scheduling</em></h1>
+        <p>Voice + Text timetable management. Smart clash-free generation. Daily email reminders. PDF &amp; image export.</p>
+        <div class="feat-pills">
+          <div class="feat-pill">🎙 Voice + Text</div><div class="feat-pill">⚡ Auto Generate</div>
+          <div class="feat-pill">🚀 Smart Schedule</div><div class="feat-pill">⏱ Real Time</div>
+        </div>
+
+      </div>
+      <div class="auth-card">
+        <div class="auth-tabs">
+          <button class="auth-tab active" id="atab-login" onclick="switchAuthTab('login')">Sign In</button>
+          <button class="auth-tab" id="atab-register" onclick="switchAuthTab('register')">Register</button>
+        </div>
+        <div id="auth-login">
+          <div class="auth-form-title">Welcome back</div>
+          <div class="auth-form-sub">Sign in to manage timetables</div>
+          <div class="form-group"><label>Email / Username</label>
+            <div class="input-with-voice"><input class="form-input" id="l-user" name="schediq_login_user" placeholder="admin@college.edu" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"/><button class="btn-voice-field" onclick="voiceField('l-user','username')">🎙</button></div>
+          </div>
+          <div class="form-group"><label>Password</label>
+            <input class="form-input" id="l-pass" name="schediq_login_pass" type="password" placeholder="Password" autocomplete="off" onkeydown="if(event.key==='Enter')doLogin()"/>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <div style="display:flex;align-items:center;gap:8px">
+              <input type="checkbox" id="remember-login" />
+              <label for="remember-login" style="margin:0;font-size:14px">Remember me</label>
+            </div>
+            <button class="link-button" type="button" onclick="switchAuthTab('forgot')">Forgot password?</button>
+          </div>
+          <div class="auth-msg" id="login-msg"></div>
+          <button class="btn-primary" onclick="doLogin()">→ Sign In</button>
+          <div class="auth-divider">or</div>
+          <button class="btn-voice-login" onclick="startVoiceLogin()">🎙 Voice Sign In</button>
+        </div>
+        <div id="auth-register" style="display:none">
+          <div class="auth-form-title">Create account</div>
+          <div class="form-row">
+            <div class="form-group"><label>Full Name</label><div class="input-with-voice"><input class="form-input" id="r-name" placeholder="Your name"/><button class="btn-voice-field" onclick="voiceField('r-name','name')">🎙</button></div></div>
+            <div class="form-group"><label>Role</label><select class="form-input" id="r-role"><option value="admin">Admin</option><option value="teacher">Teacher</option></select></div>
+          </div>
+          <div class="form-group"><label>Email</label><div class="input-with-voice"><input class="form-input" id="r-email" placeholder="you@college.edu" type="email"/><button class="btn-voice-field" onclick="voiceField('r-email','email')">🎙</button></div></div>
+          <div class="form-row">
+            <div class="form-group"><label>Username</label><input class="form-input" id="r-username" placeholder="username"/></div>
+            <div class="form-group"><label>Department</label><div class="input-with-voice"><input class="form-input" id="r-dept" placeholder="CSE"/><button class="btn-voice-field" onclick="voiceField('r-dept','dept')">🎙</button></div></div>
+          </div>
+          <div class="form-group"><label>Password (min 8, upper/lower/number/symbol)</label><input class="form-input" id="r-pass" type="password" placeholder="Example: Strong@123"/></div>
+          <div class="form-group"><label>Confirm Password</label><input class="form-input" id="r-pass-confirm" type="password" placeholder="Re-enter password"/></div>
+          <div class="auth-msg" id="register-msg"></div>
+          <button class="btn-primary" onclick="doRegister()">Create Account →</button>
+        </div>
+        <div id="auth-forgot" style="display:none">
+          <div class="auth-form-title">Reset Password</div>
+          <div id="forgot-step1">
+            <div class="auth-form-sub">Step 1: Enter your email</div>
+            <div class="form-group"><label>Email</label><div class="input-with-voice"><input class="form-input" id="fp-email" type="email" placeholder="you@college.edu"/><button class="btn-voice-field" onclick="voiceField('fp-email','email')">🎙</button></div></div>
+            <div class="auth-msg" id="fp-msg"></div>
+            <button class="btn-primary" onclick="doForgotPwd()">Send Reset Token →</button>
+          </div>
+          <div id="forgot-step2" style="display:none;margin-top:16px">
+            <div class="auth-form-sub">Step 2: Enter token + new password</div>
+            <div class="form-group"><label>Reset Token</label><input class="form-input" id="fp-token" placeholder="Token from email"/></div>
+            <div class="form-group"><label>New Password</label><input class="form-input" id="fp-newpw" type="password" placeholder="Min 6 chars"/></div>
+            <div class="auth-msg" id="fp-msg2"></div>
+            <button class="btn-primary" onclick="doResetPwd()">Set New Password →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN PAGE -->
+<div class="page" id="page-admin">
+  <div id="sec-dashboard" class="dashboard">
+    <div class="dash-header"><h2 id="dash-welcome">Welcome, Admin</h2><p id="dash-date"></p></div>
+    <div class="stats-grid">
+      <div class="stat-card blue"><div class="stat-icon">📅</div><div><div class="stat-value" id="stat-tt">0</div><div class="stat-label">TIMETABLES</div></div></div>
+      <div class="stat-card green"><div class="stat-icon">👩‍🏫</div><div><div class="stat-value" id="stat-teachers">0</div><div class="stat-label">TEACHERS</div></div></div>
+      <div class="stat-card amber"><div class="stat-icon">🏛</div><div><div class="stat-value" id="stat-depts">0</div><div class="stat-label">DEPARTMENTS</div></div></div>
+      <div class="stat-card purple"><div class="stat-icon">📚</div><div><div class="stat-value" id="stat-subjects">0</div><div class="stat-label">SUBJECTS</div></div></div>
+      <div class="stat-card red" style="cursor:pointer" onclick="openPanel('panel-leaves')" title="View pending leaves"><div class="stat-icon">🗓</div><div><div class="stat-value" id="stat-leaves">0</div><div class="stat-label">PENDING LEAVES</div></div></div>
+      <div class="stat-card orange" style="cursor:pointer" onclick="api('GET','/clashes/cross').then(r=>r.ok&&toast(r.count?r.count+' cross-timetable clashes found':'No cross clashes ✅','info'))" title="Check cross-timetable clashes"><div class="stat-icon">⚡</div><div><div class="stat-value" id="stat-clashes">0</div><div class="stat-label">CROSS CLASHES</div></div></div>
+    </div>
+    <div class="dash-grid">
+      <div class="dash-card">
+        <div class="dash-card-header"><span class="dash-card-title">👩‍🏫 Teachers</span>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button class="btn-sm accent" onclick="openModal('modal-add-teacher')">＋ Add</button>
+            <button class="btn-sm" onclick="openModal('modal-voice-cmd')">🎙 Voice</button>
+            <button class="btn-sm" onclick="broadcastNotification()">🔔 Broadcast</button>
+            <button class="btn-sm" onclick="sendDailyReminders()">📧 Daily</button>
+            <button class="btn-sm" onclick="openWorkload()">📊 Workload</button>
+            <button class="btn-sm" onclick="openModal('modal-announcement')">📢 Announce</button>
+            <button class="btn-sm" onclick="openPanel('panel-activity')">🕑 Log</button>
+          </div>
+        </div>
+        <div class="teacher-list" id="teacher-list"><div class="empty-state"><div class="icon">👩‍🏫</div><p>No teachers yet.</p></div></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="dash-card">
+          <div class="dash-card-header"><span class="dash-card-title">🏛 Departments</span><button class="btn-sm accent" onclick="openModal('modal-add-dept')">＋ Add</button></div>
+          <div class="dept-list" id="dept-list"><div class="empty-state" style="padding:12px 0"><div class="icon">🏛</div><p>No departments.</p></div></div>
+        </div>
+        <div class="dash-card">
+          <div class="dash-card-header"><span class="dash-card-title">📅 Timetables</span>
+            <div style="display:flex;gap:6px"><button class="btn-sm accent" onclick="openModal('modal-new-tt')">＋ New</button><button class="btn-sm" onclick="openModal('modal-generate')">⚡ Generate</button></div>
+          </div>
+          <div id="tt-list-admin" style="max-height:260px;overflow-y:auto;display:flex;flex-direction:column;gap:8px"><div class="empty-state" style="padding:12px 0"><div class="icon">📅</div><p>No timetables.</p></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="sec-timetable" class="tt-page" style="display:none">
+    <div class="tt-header">
+      <div class="tt-title-wrap">
+        <div class="tt-breadcrumb" id="tt-breadcrumb">Admin → Timetable</div>
+        <div class="tt-main-title"><span id="tt-display-name">Untitled</span><span class="tt-dept-badge" id="tt-dept-badge">—</span></div>
+        <div class="tt-meta">Room: <span id="tt-room-display">—</span> | <span id="tt-year-display">—</span> | W.E.F: <span id="tt-wef-display">—</span></div>
+      </div>
+      <div class="tt-actions">
+        <button class="btn-action outline" onclick="openModal('modal-tt-settings')">⚙ Settings</button>
+        <button class="btn-action filled" onclick="openAssignModal()">👤 Assign</button>
+        <button class="btn-action navy" onclick="openModal('modal-generate')">⚡ Auto</button>
+        <button class="btn-action outline" onclick="detectClashes()">🔎 Clashes</button>
+        <button class="btn-action outline" onclick="openWorkload()">📊 Workload</button>
+        <button class="btn-action outline" onclick="exportImage()">🖼 Image</button>
+        <button class="btn-action outline" onclick="exportPDF()">📄 PDF</button>
+        <button class="btn-action red" onclick="clearTimetable()">✕ Clear</button>
+      </div>
+    </div>
+    <div class="tt-info-bar">
+      <div class="info-chip">Branch: <strong id="ic-branch">—</strong></div>
+      <div class="info-chip">Room: <strong id="ic-room">—</strong></div>
+      <div class="info-chip">Year: <strong id="ic-year">—</strong></div>
+      <div class="info-chip">A.Y: <strong id="ic-ay">—</strong></div>
+    </div>
+    <div class="voice-bar" id="voice-bar">
+      <div class="vdot" id="vdot"></div>
+      <span class="vbar-text" id="vbar-text">Voice ready — "Add [Subject] on [Day] at slot [1-7]" · Ctrl+K</span>
+      <button class="vbar-mic" onclick="toggleVoice()" id="vbar-mic-btn" title="Ctrl+K">🎙</button>
+    </div>
+    <div class="tt-table-wrap" id="tt-table-container"></div>
+    <div class="action-panel">
+      <div class="ap-title">Actions</div>
+      <button class="btn-action filled" onclick="startVoiceAction()">🎙 Voice</button>
+      <button class="btn-action outline" onclick="openEditSelectedCell()">✏️ Edit</button>
+      <button class="btn-action outline" onclick="deleteSelectedCell()">🗑 Delete</button>
+      <button class="btn-action outline" onclick="openBulkAdd()">📋 Bulk</button>
+      <button class="btn-action navy" onclick="autoFill()">⚡ Auto Fill</button>
+      <button class="btn-action outline" onclick="suggestFreeSlot()">🔍 Free Slot</button>
+      <button class="btn-action outline" onclick="openPanel('panel-history')">📋 History</button>
+      <button class="btn-action outline" onclick="openSubstitute()">👤 Substitute</button>
+      <button class="btn-action outline" id="btn-publish" onclick="togglePublish()" title="Publish/Draft">✅ Publish</button>
+      <button class="btn-action outline" onclick="cloneTimetable()">📋 Clone</button>
+    </div>
+  </div>
+</div>
+
+<!-- TEACHER PAGE -->
+<div class="page" id="page-teacher">
+  <div class="teacher-view">
+    <div class="tt-header" style="margin-bottom:16px">
+      <div class="tt-title-wrap">
+        <div class="tt-breadcrumb" id="t-breadcrumb">Teacher → My Schedule</div>
+        <div class="tt-main-title" id="t-tt-title">My Timetable</div>
+        <div class="tt-meta" id="t-tt-meta">Loading...</div>
+      </div>
+      <div class="tt-actions">
+        <button class="btn-action outline" onclick="openPanel('panel-notif')">🔔 Notifications <span id="notif-badge" style="background:var(--red);color:#fff;border-radius:99px;padding:1px 6px;font-size:10px;display:none">0</span></button>
+        <button class="btn-action outline" onclick="exportImage()">🖼 Image</button>
+        <button class="btn-action outline" onclick="exportPDF()">📄 PDF</button>
+        <button class="btn-action outline" onclick="openPanel('panel-leaves')">🗓 Apply Leave</button>
+        <button class="btn-action outline" onclick="openPanel('panel-profile')">👤 Profile</button>
+      </div>
+    </div>
+    <div class="today-highlight">
+      <div class="today-hd"><div class="today-day" id="today-day-name">—</div><div class="today-date" id="today-date-str"></div></div>
+      <div class="today-classes" id="today-classes"><div class="no-class-today">📭 Loading...</div></div>
+    </div>
+    <!-- Timetable switcher shown when teacher has multiple timetables -->
+    <div id="tt-switcher" style="display:none;flex-wrap:wrap;gap:6px;margin:0 0 10px 0;padding:0 4px"></div>
+    <div class="tt-table-wrap" id="tt-table-container-teacher"></div>
+  </div>
+</div>
+
+<!-- ===== MODALS ===== -->
+<div class="overlay" id="modal-add-teacher" onclick="overlayClick(event,'modal-add-teacher')">
+  <div class="modal"><div class="modal-hd"><h3>Add Teacher</h3><button class="modal-close" onclick="closeModal('modal-add-teacher')">✕</button></div>
+    <div class="modal-body"><p class="modal-sub">Login credentials emailed automatically.</p>
+      <div class="form-row">
+        <div class="form-group"><label>Full Name</label><div class="input-with-voice"><input class="form-input" id="at-name" placeholder="Dr. John Smith"/><button class="btn-voice-field" onclick="voiceField('at-name','name')">🎙</button></div></div>
+        <div class="form-group"><label>Email</label><div class="input-with-voice"><input class="form-input" id="at-email" placeholder="teacher@college.edu" type="email"/><button class="btn-voice-field" onclick="voiceField('at-email','email')">🎙</button></div></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Department</label><div class="input-with-voice"><input class="form-input" id="at-dept" placeholder="CSE"/><button class="btn-voice-field" onclick="voiceField('at-dept','department')">🎙</button></div></div>
+        <div class="form-group"><label>Phone</label><input class="form-input" id="at-phone" placeholder="9876543210" maxlength="10" inputmode="numeric" pattern="[0-9]{10}"/></div>
+      </div>
+      <div class="form-group"><label>Subjects (comma separated)</label><div class="input-with-voice"><input class="form-input" id="at-subjects" placeholder="Maths, Physics"/><button class="btn-voice-field" onclick="voiceField('at-subjects','subjects')">🎙</button></div></div>
+      <div class="form-group"><label>Password (blank = auto)</label><input class="form-input" id="at-password" placeholder="Leave blank to auto-generate"/></div>
+      <div class="auth-msg" id="at-msg"></div>
+    </div>
+    <div class="modal-footer"><button class="btn-modal-ghost" onclick="closeModal('modal-add-teacher')">Cancel</button><button class="btn-modal-primary" id="at-btn" onclick="addTeacher()">Add Teacher</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-edit-teacher" onclick="overlayClick(event,'modal-edit-teacher')">
+  <div class="modal"><div class="modal-hd"><h3>Edit Teacher</h3><button class="modal-close" onclick="closeModal('modal-edit-teacher')">✕</button></div>
+    <div class="modal-body"><input type="hidden" id="et-id"/>
+      <div class="form-row"><div class="form-group"><label>Name</label><input class="form-input" id="et-name"/></div><div class="form-group"><label>Phone</label><input class="form-input" id="et-phone"/></div></div>
+      <div class="form-row"><div class="form-group"><label>Department</label><input class="form-input" id="et-dept"/></div><div class="form-group"><label>Subjects</label><input class="form-input" id="et-subjects"/></div></div>
+      <div class="auth-msg" id="et-msg"></div>
+    </div>
+    <div class="modal-footer"><button class="btn-modal-ghost" onclick="closeModal('modal-edit-teacher')">Cancel</button><button class="btn-modal-primary" onclick="saveTeacherEdit()">Save</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-add-dept" onclick="overlayClick(event,'modal-add-dept')">
+  <div class="modal"><div class="modal-hd"><h3>Add Department</h3><button class="modal-close" onclick="closeModal('modal-add-dept')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row"><div class="form-group"><label>Name</label><div class="input-with-voice"><input class="form-input" id="ad-name" placeholder="Computer Science"/><button class="btn-voice-field" onclick="voiceField('ad-name','name')">🎙</button></div></div><div class="form-group"><label>Code</label><input class="form-input" id="ad-code" placeholder="CSE"/></div></div>
+      <div class="form-group"><label>Sections</label><div class="input-with-voice"><input class="form-input" id="ad-sections" placeholder="A, B, C"/><button class="btn-voice-field" onclick="voiceField('ad-sections','sections')">🎙</button></div></div>
+    </div>
+    <div class="modal-footer"><button class="btn-modal-ghost" onclick="closeModal('modal-add-dept')">Cancel</button><button class="btn-modal-primary" onclick="addDepartment()">Add</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-new-tt" onclick="overlayClick(event,'modal-new-tt')">
+  <div class="modal"><div class="modal-hd"><h3>New Timetable</h3><button class="modal-close" onclick="closeModal('modal-new-tt')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row"><div class="form-group"><label>Name/Section</label><div class="input-with-voice"><input class="form-input" id="ntt-name" placeholder="CSE-B Sem 1"/><button class="btn-voice-field" onclick="voiceField('ntt-name','name')">🎙</button></div></div><div class="form-group"><label>Department</label><div class="input-with-voice"><input class="form-input" id="ntt-dept" placeholder="CSE-B"/><button class="btn-voice-field" onclick="voiceField('ntt-dept','department')">🎙</button></div></div></div>
+      <div class="form-row"><div class="form-group"><label>Room</label><input class="form-input" id="ntt-room" placeholder="NB-201"/></div><div class="form-group"><label>W.E.F Date</label><input class="form-input" id="ntt-wef" type="date"/></div></div>
+      <div class="form-row"><div class="form-group"><label>Year/Sem</label><input class="form-input" id="ntt-year" placeholder="IV Year I Sem"/></div><div class="form-group"><label>Academic Year</label><input class="form-input" id="ntt-ay" placeholder="2025-2026"/></div></div>
+    </div>
+    <div class="modal-footer"><button class="btn-modal-ghost" onclick="closeModal('modal-new-tt')">Cancel</button><button class="btn-modal-primary" onclick="createTimetable()">Create →</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-tt-settings" onclick="overlayClick(event,'modal-tt-settings')">
+  <div class="modal"><div class="modal-hd"><h3>Timetable Settings</h3><button class="modal-close" onclick="closeModal('modal-tt-settings')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row"><div class="form-group"><label>Name</label><input class="form-input" id="ts-name"/></div><div class="form-group"><label>Department</label><input class="form-input" id="ts-dept"/></div></div>
+      <div class="form-row"><div class="form-group"><label>Room</label><input class="form-input" id="ts-room"/></div><div class="form-group"><label>W.E.F</label><input class="form-input" id="ts-wef" type="date"/></div></div>
+      <div class="form-row"><div class="form-group"><label>Year/Sem</label><input class="form-input" id="ts-year"/></div><div class="form-group"><label>Academic Year</label><input class="form-input" id="ts-ay"/></div></div>
+    </div>
+    <div class="modal-footer"><button class="btn-modal-ghost" onclick="closeModal('modal-tt-settings')">Cancel</button><button class="btn-modal-primary" onclick="saveTTSettings()">Save</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-cell" onclick="overlayClick(event,'modal-cell')">
+  <div class="modal"><div class="modal-hd"><h3 id="cell-modal-title">Edit Cell</h3><button class="modal-close" onclick="closeModal('modal-cell')">✕</button></div>
+    <div class="modal-body"><p class="modal-sub" id="cell-modal-sub"></p>
+      <div class="form-group"><label>Subject</label><div class="input-with-voice"><input class="form-input" id="cell-subject" placeholder="e.g. Cryptography"/><button class="btn-voice-field" onclick="voiceField('cell-subject','subject')">🎙</button></div></div>
+      <div class="form-group"><label>Teacher</label><div class="input-with-voice"><input class="form-input" id="cell-teacher" placeholder="Teacher name" list="teacher-datalist-cell"/><button class="btn-voice-field" onclick="voiceField('cell-teacher','teacher name')">🎙</button></div><datalist id="teacher-datalist-cell"></datalist></div>
+      <div class="form-group"><label>Type</label><select class="form-input" id="cell-type"><option value="lecture">Lecture</option><option value="lab">Lab</option><option value="project">Project</option></select></div>
+      <div class="auth-msg" id="cell-msg"></div>
+    </div>
+    <div class="modal-footer"><button class="btn-modal-ghost" onclick="clearCell()">Clear</button><button class="btn-modal-ghost" onclick="closeModal('modal-cell')">Cancel</button><button class="btn-modal-primary" onclick="saveCellEdit()">Save</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-assign-teacher" onclick="overlayClick(event,'modal-assign-teacher')">
+  <div class="modal"><div class="modal-hd"><h3>Assign Teachers</h3><button class="modal-close" onclick="closeModal('modal-assign-teacher')">✕</button></div>
+    <div class="modal-body"><p class="modal-sub">Assigned teachers can view this timetable.</p>
+      <div class="form-group"><label>Select Teacher</label><select class="form-input" id="assign-teacher-select"><option value="">— Choose —</option></select></div>
+      <button class="btn-modal-primary" style="width:100%;margin-bottom:16px" onclick="assignTeacher()">Assign →</button>
+      <div class="section-label">Currently Assigned</div>
+      <div id="assigned-list"><div class="empty-state" style="padding:12px 0"><p>None assigned.</p></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-generate" onclick="overlayClick(event,'modal-generate')">
+  <div class="modal modal-lg"><div class="modal-hd"><h3>⚡ Smart Timetable Generator</h3><button class="modal-close" onclick="closeModal('modal-generate')">✕</button></div>
+    <div class="modal-body"><p class="modal-sub">Clash-free generation — no teacher double-booked in same slot across sections.</p>
+      <div class="section-label">Subjects</div>
+      <div class="tag-input-wrap"><div class="input-with-voice" style="flex:1"><input class="form-input" id="gen-subject-input" placeholder="Add subject..." onkeydown="if(event.key==='Enter')addGenTag('subject')"/><button class="btn-voice-field" onclick="voiceField('gen-subject-input','subject')">🎙</button></div><button class="btn-action filled" onclick="addGenTag('subject')">Add</button></div>
+      <div class="tags-display" id="gen-subjects-tags" style="margin-top:8px"></div>
+      <div class="section-label" style="margin-top:16px">Teachers</div>
+      <div class="tag-input-wrap"><div class="input-with-voice" style="flex:1"><input class="form-input" id="gen-teacher-input" placeholder="Add teacher..." onkeydown="if(event.key==='Enter')addGenTag('teacher')"/><button class="btn-voice-field" onclick="voiceField('gen-teacher-input','teacher')">🎙</button></div><button class="btn-action filled" onclick="addGenTag('teacher')">Add</button></div>
+      <div class="tags-display" id="gen-teachers-tags" style="margin-top:8px"></div>
+      <div class="form-row" style="margin-top:16px">
+        <div class="form-group"><label>Sections</label><select class="form-input" id="gen-sections"><option value="1">1</option><option value="2" selected>2</option><option value="3">3</option><option value="4">4</option></select></div>
+        <div class="form-group"><label>Periods/day</label><select class="form-input" id="gen-periods"><option value="3">3</option><option value="4">4</option><option value="6" selected>6</option></select></div>
+      </div>
+      <button class="btn-modal-primary" style="width:100%;margin-top:4px" onclick="generateTimetables()">⚡ Generate Clash-Free</button>
+      <div id="gen-results" class="gen-results" style="margin-top:16px"></div>
+    </div>
+    <div class="modal-footer" id="gen-footer" style="display:none"><button class="btn-modal-ghost" onclick="closeModal('modal-generate')">Cancel</button><button class="btn-modal-primary" onclick="applyGenerated()">Apply Selected →</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-bulk" onclick="overlayClick(event,'modal-bulk')">
+  <div class="modal"><div class="modal-hd"><h3>Bulk Add</h3><button class="modal-close" onclick="closeModal('modal-bulk')">✕</button></div>
+    <div class="modal-body"><p class="modal-sub">One per line: <code>DAY, SLOT(1-7), Subject, Teacher</code></p>
+      <div class="form-group"><textarea class="form-input" id="bulk-text" rows="8" placeholder="MON, 1, Mathematics, Dr. Smith&#10;TUE, 3, Physics, Prof. Kumar" style="resize:vertical"></textarea></div>
+      <div class="auth-msg" id="bulk-msg"></div>
+    </div>
+    <div class="modal-footer"><button class="btn-modal-ghost" onclick="closeModal('modal-bulk')">Cancel</button><button class="btn-modal-primary" onclick="doBulkAdd()">Add All</button></div>
+  </div>
+</div>
+
+<!-- AUTO-FILL MODAL -->
+<div class="overlay" id="modal-autofill" onclick="overlayClick(event,'modal-autofill')">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-hd"><h3>⚡ Smart Auto-Fill</h3><button class="modal-close" onclick="closeModal('modal-autofill')">✕</button></div>
+    <div class="modal-body">
+      <p class="modal-sub" style="margin-bottom:12px">Automatically fills <strong id="af-empty-count">0</strong> empty slot(s) using subjects from assigned teachers. Clash-free algorithm ensures no teacher is double-booked in the same time slot.</p>
+      <div class="form-group">
+        <label>Fill Strategy</label>
+        <select class="form-input" id="af-strategy">
+          <option value="round_robin">Round Robin (even distribution)</option>
+          <option value="random">Random (shuffle subjects)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label style="margin-bottom:6px;display:block">Subject–Teacher Pairs Available</label>
+        <div id="af-pairs-preview" style="max-height:120px;overflow-y:auto;padding:8px;background:var(--bg3);border-radius:8px;display:flex;flex-wrap:wrap;gap:4px"></div>
+      </div>
+      <div style="padding:10px;background:var(--bg3);border-radius:8px;font-size:11px;color:var(--text2)">
+        💡 Only <em>empty</em> cells are filled. Existing entries are preserved.<br>
+        💡 Assign teachers to this timetable first so their subjects are used.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-modal-ghost" onclick="closeModal('modal-autofill')">Cancel</button>
+      <button class="btn-modal-primary" id="af-btn" onclick="doAutoFill()">⚡ Auto-Fill Now</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-voice" onclick="overlayClick(event,'modal-voice')">
+  <div class="modal" style="max-width:360px">
+    <div class="modal-hd">
+      <h3 id="voice-modal-title">🎙 Voice Input</h3>
+      <button class="modal-close" onclick="stopVoice()">✕</button>
+    </div>
+    <div class="modal-body" style="padding-bottom:8px">
+
+      <!-- Mic animation -->
+      <div class="voice-modal-inner" style="padding:12px 0 8px">
+        <div class="voice-anim"><div class="vring r1"></div><div class="vring r2"></div><div class="vring r3"></div><span class="vmic-icon">🎙</span></div>
+        <div class="voice-transcript" id="voice-transcript" style="margin-top:8px;font-size:15px;font-weight:600;color:var(--accent)">Listening...</div>
+      </div>
+
+      <!-- Step progress bar -->
+      <div id="voice-steps-wrap" style="margin:10px 0 6px">
+        <div style="display:flex;gap:4px;margin-bottom:10px">
+          <div class="vstep-dot active" id="vstep-dot-1"></div>
+          <div class="vstep-dot" id="vstep-dot-2"></div>
+          <div class="vstep-dot" id="vstep-dot-3"></div>
+          <div class="vstep-dot" id="vstep-dot-4"></div>
+        </div>
+
+        <!-- Step 1: Subject -->
+        <div class="vstep-row" id="vstep-row-1">
+          <div class="vstep-label">Step 1: Subject name</div>
+          <div class="vstep-value" id="vstep-val-1">—</div>
+        </div>
+
+        <!-- Step 2: Day -->
+        <div class="vstep-row" id="vstep-row-2">
+          <div class="vstep-label">Step 2: Day</div>
+          <div class="vstep-value" id="vstep-val-2">—</div>
+        </div>
+
+        <!-- Step 3: Period -->
+        <div class="vstep-row" id="vstep-row-3">
+          <div class="vstep-label">Step 3: Period number (1–7)</div>
+          <div class="vstep-value" id="vstep-val-3">—</div>
+        </div>
+
+        <!-- Step 4: Teacher -->
+        <div class="vstep-row" id="vstep-row-4">
+          <div class="vstep-label">Step 4: Teacher name</div>
+          <div class="vstep-value" id="vstep-val-4">—</div>
+        </div>
+      </div>
+
+      <!-- Current question -->
+      <div id="voice-question" style="text-align:center;font-size:13px;color:var(--text2);margin:8px 0 4px;font-style:italic"></div>
+
+      <button class="btn-modal-ghost" style="width:100%;margin-top:4px" onclick="stopVoice()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-voice-cmd" onclick="overlayClick(event,'modal-voice-cmd')">
+  <div class="modal" style="max-width:420px"><div class="modal-hd"><h3>🎙 Voice Command Center</h3><button class="modal-close" onclick="closeModal('modal-voice-cmd');stopGlobalVoice()">✕</button></div>
+    <div class="modal-body">
+      <div class="voice-modal-inner">
+        <div class="voice-anim"><div class="vring r1"></div><div class="vring r2"></div><div class="vring r3"></div><span class="vmic-icon">🎙</span></div>
+        <div class="voice-transcript" id="vcmd-transcript">Click Start to speak</div>
+        <div class="voice-hint" id="vcmd-hint">Full voice control for admin</div>
+      </div>
+      <button class="btn-modal-primary" style="width:100%;margin-top:12px" id="vcmd-start-btn" onclick="toggleGlobalVoice()">🎙 Start Listening</button>
+      <div style="margin-top:12px;padding:10px;background:var(--bg3);border-radius:8px;font-size:11px;color:var(--text2);line-height:1.8"><strong>Try:</strong><br>"Add teacher John Smith CSE"<br>"Create timetable CSE A"<br>"Generate timetable"<br>"Broadcast No classes tomorrow"<br>"Send daily reminders"</div>
+      <div class="auth-msg" id="vcmd-msg" style="margin-top:10px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- SIDE PANELS -->
+<div class="sp-backdrop" id="sp-backdrop" onclick="closeAllPanels()"></div>
+
+<div class="side-panel" id="panel-profile">
+  <div class="sp-hd"><span class="sp-title">👤 My Profile</span><button class="modal-close" onclick="closePanel('panel-profile')">✕</button></div>
+  <div class="sp-body">
+    <div class="profile-avatar" id="profile-av">A</div>
+    <div class="profile-name" id="profile-name">Loading...</div>
+    <div class="profile-role-badge"><span class="nav-role-badge" id="profile-role-badge">—</span></div>
+    <div class="profile-stats">
+      <div class="pstat"><div class="pstat-val" id="ps-tt">0</div><div class="pstat-lbl">Timetables</div></div>
+      <div class="pstat"><div class="pstat-val" id="ps-since">—</div><div class="pstat-lbl">Since</div></div>
+    </div>
+    <div class="profile-info-rows">
+      <div class="pinfo-row"><span class="pinfo-key">Email</span><span class="pinfo-val" id="pi-email">—</span></div>
+      <div class="pinfo-row"><span class="pinfo-key">Username</span><span class="pinfo-val" id="pi-username">—</span></div>
+      <div class="pinfo-row"><span class="pinfo-key">Department</span><span class="pinfo-val" id="pi-dept">—</span></div>
+      <div class="pinfo-row"><span class="pinfo-key">Phone</span><span class="pinfo-val" id="pi-phone">—</span></div>
+    </div>
+    <div class="profile-edit-form">
+      <h4>Edit Profile</h4>
+      <div class="form-group"><label>Name</label><div class="input-with-voice"><input class="form-input" id="ep-name" placeholder="Name"/><button class="btn-voice-field" onclick="voiceField('ep-name','name')">🎙</button></div></div>
+      <div class="form-group"><label>Phone</label><input class="form-input" id="ep-phone" placeholder="Phone"/></div>
+      <div class="form-group"><label>Department</label><input class="form-input" id="ep-dept" placeholder="Department"/></div>
+      <div class="auth-msg" id="ep-msg"></div>
+      <button class="btn-action filled" style="width:100%;margin-top:4px" onclick="saveProfileEdit()">Save Profile</button>
+    </div>
+    <div class="pwd-change-form">
+      <h4>Change Password</h4>
+      <input class="form-input" id="cp-old" type="password" placeholder="Current password" style="margin-bottom:8px"/>
+      <input class="form-input" id="cp-new" type="password" placeholder="New password (min 6)" style="margin-bottom:8px"/>
+      <input class="form-input" id="cp-confirm" type="password" placeholder="Confirm new password"/>
+      <div class="auth-msg" id="cp-msg"></div>
+      <button class="btn-action filled" style="width:100%;margin-top:8px" onclick="changePassword()">Update Password</button>
+    </div>
+  </div>
+</div>
+
+<div class="side-panel" id="panel-history">
+  <div class="sp-hd"><span class="sp-title">📋 Change Log</span><button class="modal-close" onclick="closePanel('panel-history')">✕</button></div>
+  <div class="sp-body" id="history-body"><div class="empty-state"><div class="icon">📋</div><p>No history.</p></div></div>
+</div>
+
+<div class="side-panel" id="panel-notif">
+  <div class="sp-hd">
+    <span class="sp-title">🔔 Notifications</span>
+    <div style="display:flex;gap:6px;align-items:center"><button class="btn-sm" onclick="markAllRead()">Mark all read</button><button class="modal-close" onclick="closePanel('panel-notif')">✕</button></div>
+  </div>
+  <div class="sp-body" id="notif-body"><div class="empty-state"><div class="icon">🔔</div><p>No notifications.</p></div></div>
+</div>
+
+<!-- ══ v2 NEW FEATURE MODALS ══ -->
+
+<div class="side-panel" id="panel-ai-chat">
+  <div class="sp-hd">
+    <span class="sp-title">AI Chat Assistant</span>
+    <button class="modal-close" onclick="closePanel('panel-ai-chat')">âœ•</button>
+  </div>
+  <div class="sp-body ai-chat-panel">
+    <div class="ai-chat-status" id="ai-chat-status">Ask about the open timetable, teacher load, free periods, room, or subject slots.</div>
+    <div class="ai-chat-messages" id="ai-chat-messages"></div>
+    <div class="ai-chat-suggestions" id="ai-chat-suggestions">
+      <button class="btn-sm" onclick="askAIQuick('What is scheduled today in this timetable?')">Today</button>
+      <button class="btn-sm" onclick="askAIQuick('Which periods are free on Monday?')">Free Monday</button>
+      <button class="btn-sm" onclick="askAIQuick('Summarize this timetable')">Summary</button>
+      <button class="btn-sm" onclick="askAIQuick('Who teaches the most in this timetable?')">Top teacher</button>
+    </div>
+    <div class="ai-chat-compose">
+      <textarea class="form-input ai-chat-input" id="ai-chat-input" rows="3" placeholder="Ask: Which subject is in MON period 1?" onkeydown="handleAIChatKey(event)"></textarea>
+      <div class="ai-chat-actions">
+        <button class="btn-action outline" onclick="clearAIChat()">Clear</button>
+        <button class="btn-action filled" onclick="sendAIChat()">Send</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CLASH DETECTOR -->
+<div class="overlay" id="modal-clashes" onclick="overlayClick(event,'modal-clashes')">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-hd"><h3>⚡ Clash Detector</h3><button class="modal-close" onclick="closeModal('modal-clashes')">✕</button></div>
+    <div class="modal-body">
+      <div id="clash-results"></div>
+      <div id="clash-cross-results"></div>
+    </div>
+    <div class="modal-footer"><button class="btn-modal-ghost" onclick="closeModal('modal-clashes')">Close</button></div>
+  </div>
+</div>
+
+<!-- SUBSTITUTE FINDER -->
+<div class="overlay" id="modal-substitute" onclick="overlayClick(event,'modal-substitute')">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-hd"><h3>👤 Find Substitute</h3><button class="modal-close" onclick="closeModal('modal-substitute')">✕</button></div>
+    <div class="modal-body">
+      <p class="modal-sub">Select absent teacher and day — system finds available substitutes with no clashes.</p>
+      <div class="form-row">
+        <div class="form-group" style="flex:2"><label>Absent Teacher</label>
+          <select class="form-input" id="sub-teacher-select"><option value="">— Select —</option></select>
+        </div>
+        <div class="form-group" style="flex:1"><label>Day</label>
+          <select class="form-input" id="sub-day-select">
+            <option>MON</option><option>TUE</option><option>WED</option>
+            <option>THU</option><option>FRI</option><option>SAT</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn-modal-primary" style="width:100%" onclick="findSubstitute()">🔍 Find Available Substitutes</button>
+      <div id="sub-results" style="margin-top:12px"></div>
+    </div>
+    <div class="modal-footer"><button class="btn-modal-ghost" onclick="closeModal('modal-substitute')">Close</button></div>
+  </div>
+</div>
+
+<!-- WORKLOAD ANALYTICS -->
+<div class="overlay" id="modal-workload" onclick="overlayClick(event,'modal-workload')">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-hd"><h3>📊 Teacher Workload</h3><button class="modal-close" onclick="closeModal('modal-workload')">✕</button></div>
+    <div class="modal-body" style="max-height:65vh;overflow-y:auto">
+      <div id="workload-body"></div>
+    </div>
+    <div class="modal-footer"><button class="btn-modal-ghost" onclick="closeModal('modal-workload')">Close</button></div>
+  </div>
+</div>
+
+<!-- POST ANNOUNCEMENT -->
+<div class="overlay" id="modal-announcement" onclick="overlayClick(event,'modal-announcement')">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-hd"><h3>📢 Post Announcement</h3><button class="modal-close" onclick="closeModal('modal-announcement')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label>Title</label>
+        <div class="input-with-voice"><input class="form-input" id="ann-title" placeholder="Announcement title"/><button class="btn-voice-field" onclick="voiceField('ann-title','title')">🎙</button></div>
+      </div>
+      <div class="form-group"><label>Message</label>
+        <textarea class="form-input" id="ann-body-input" rows="4" placeholder="Write your announcement..." style="resize:vertical"></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Priority</label>
+          <select class="form-input" id="ann-priority"><option value="normal">Normal</option><option value="urgent">🚨 Urgent</option></select>
+        </div>
+        <div class="form-group"><label>Dept Filter (blank = all)</label>
+          <input class="form-input" id="ann-dept-filter" placeholder="CSE / ECE / leave blank"/>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="btn-modal-ghost" onclick="closeModal('modal-announcement')">Cancel</button><button class="btn-modal-primary" onclick="postAnnouncement()">📢 Post</button></div>
+  </div>
+</div>
+
+<!-- SIDE PANELS — Announcements, Leaves, Activity -->
+<div class="side-panel" id="panel-announcements">
+  <div class="sp-hd">
+    <span class="sp-title">📢 Announcements</span>
+    <div style="display:flex;gap:6px;align-items:center">
+      <button class="btn-sm accent" id="btn-post-ann" style="display:none" onclick="openModal('modal-announcement')">＋ Post</button>
+      <button class="modal-close" onclick="closePanel('panel-announcements')">✕</button>
+    </div>
+  </div>
+  <div class="sp-body" id="ann-body"><div class="empty-state"><div class="icon">📢</div><p>No announcements.</p></div></div>
+</div>
+
+<div class="side-panel" id="panel-leaves">
+  <div class="sp-hd">
+    <span class="sp-title">🗓 Leave Requests</span>
+    <button class="modal-close" onclick="closePanel('panel-leaves')">✕</button>
+  </div>
+  <div class="sp-body">
+    <div id="leave-apply-form" style="padding:12px 0 8px">
+      <div class="form-row">
+        <div class="form-group" style="flex:1"><label>Date</label><input class="form-input" id="leave-date" type="date"/></div>
+        <div class="form-group" style="flex:2"><label>Reason</label>
+          <div class="input-with-voice"><input class="form-input" id="leave-reason" placeholder="Optional reason"/><button class="btn-voice-field" onclick="voiceField('leave-reason','reason')">🎙</button></div>
+        </div>
+      </div>
+      <button class="btn-action filled" style="width:100%" onclick="applyLeave()">📨 Apply for Leave</button>
+    </div>
+    <div id="leave-body"></div>
+  </div>
+</div>
+
+<div class="side-panel" id="panel-activity">
+  <div class="sp-hd"><span class="sp-title">🕑 Activity Log</span><button class="modal-close" onclick="closePanel('panel-activity')">✕</button></div>
+  <div class="sp-body" id="activity-body"><div class="empty-state"><div class="icon">🕑</div><p>No activity.</p></div></div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+flask==3.0.3
+flask-sqlalchemy==3.1.1
+flask-mail==0.10.0
+werkzeug==3.0.3
+reportlab==4.2.2
+Pillow==10.4.0
+python-dotenv==1.0.1
+apscheduler==3.10.4
+spacy==3.7.4
+
+# Required spaCy model:
+# python -m spacy download en_core_web_sm
